@@ -1,6 +1,10 @@
 package main
 
-import "sync"
+import (
+	"sync"
+
+	"github.com/madhusudhan-reddy-oneture/gotbd/my-app/server"
+)
 
 type InMemoryPlayerStore struct {
 	store map[string]int
@@ -13,6 +17,10 @@ func NewInMemoryPlayerStore() *InMemoryPlayerStore {
 
 func (s *InMemoryPlayerStore) GetPlayerScore(name string) int {
 	return s.store[name]
+}
+
+func (s *InMemoryPlayerStore) GetLeague() []server.Player {
+	return nil
 }
 
 func (s *InMemoryPlayerStore) RecordWin(name string) {

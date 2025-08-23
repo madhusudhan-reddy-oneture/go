@@ -1,4 +1,4 @@
-package server_test
+package main
 
 import (
 	"encoding/json"
@@ -8,8 +8,6 @@ import (
 	"net/http/httptest"
 	"slices"
 	"testing"
-
-	. "github.com/madhusudhan-reddy-oneture/gotbd/my-app/server"
 )
 
 type StubPlayerStore struct {
@@ -105,7 +103,7 @@ func TestLeague(t *testing.T) {
 		store.league = wantedLeague
 		server := NewPlayerServer(store)
 
-		request := NewLeagueRequest()
+		request := newLeagueRequest()
 		response := httptest.NewRecorder()
 
 		server.ServeHTTP(response, request)
@@ -114,14 +112,18 @@ func TestLeague(t *testing.T) {
 
 		assertStatus(t, response.Code, http.StatusOK)
 		assertLeague(t, got, wantedLeague)
-
-		if response.Result().Header.Get("content-type") != "application/json" {
-			t.Errorf("response did not have content-type of application/json, got %v", response.Result().Header)
-		}
+		assertContentType(t, response, JsonContentType)
 	})
 }
 
-func NewLeagueRequest() *http.Request {
+func assertContentType(t testing.TB, response *httptest.ResponseRecorder, want string) {
+	t.Helper()
+	if response.Result().Header.Get("content-type") != want {
+		t.Errorf("response did not have content-type of %s, got %v", want, response.Result().Header)
+	}
+}
+
+func newLeagueRequest() *http.Request {
 	request, _ := http.NewRequest(http.MethodGet, "/league", nil)
 	return request
 }

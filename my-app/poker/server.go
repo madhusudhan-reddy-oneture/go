@@ -1,4 +1,4 @@
-package server
+package poker
 
 import (
 	"encoding/json"
@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	jsonContentType = "application/json"
+	JsonContentType = "application/json"
 )
 
 type Player struct {
@@ -19,7 +19,7 @@ type Player struct {
 type PlayerStore interface {
 	GetPlayerScore(name string) int
 	RecordWin(name string)
-	GetLeague() []Player
+	GetLeague() League
 }
 
 type PlayerServer struct {
@@ -40,9 +40,9 @@ func NewPlayerServer(store PlayerStore) *PlayerServer {
 }
 
 func (p *PlayerServer) leagueHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("content-type", jsonContentType)
-	json.NewEncoder(w).Encode(p.store.GetLeague())
+	w.Header().Set("content-type", JsonContentType)
 	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(p.store.GetLeague())
 }
 
 func (p *PlayerServer) playersHandler(w http.ResponseWriter, r *http.Request) {

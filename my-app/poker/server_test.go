@@ -1,4 +1,4 @@
-package server_test
+package poker
 
 import (
 	"encoding/json"
@@ -8,33 +8,7 @@ import (
 	"net/http/httptest"
 	"slices"
 	"testing"
-
-	. "github.com/madhusudhan-reddy-oneture/gotbd/my-app/server"
 )
-
-type StubPlayerStore struct {
-	scores   map[string]int
-	winCalls []string
-	league   []Player
-}
-
-// GetLeague returns the league slice.
-func (s *StubPlayerStore) GetLeague() []Player {
-	return s.league
-}
-
-func NewStubPlayerStore() *StubPlayerStore {
-	return &StubPlayerStore{}
-}
-
-func (s *StubPlayerStore) GetPlayerScore(name string) int {
-	score := s.scores[name]
-	return score
-}
-
-func (s *StubPlayerStore) RecordWin(name string) {
-	s.winCalls = append(s.winCalls, name)
-}
 
 func TestGETPlayers(t *testing.T) {
 	playerStore := NewStubPlayerStore()
@@ -74,21 +48,14 @@ func TestStoreWins(t *testing.T) {
 	server := NewPlayerServer(store)
 
 	t.Run("it returns accepted on POST", func(t *testing.T) {
-		player := "Pipper"
+		player := "Pepper"
 		request := newPostWinRequest(player)
 		response := httptest.NewRecorder()
 
 		server.ServeHTTP(response, request)
 
 		assertStatus(t, response.Code, http.StatusAccepted)
-
-		if len(store.winCalls) != 1 {
-			t.Errorf("got %d calls to RecordWin want %d", len(store.winCalls), 1)
-		}
-
-		if store.winCalls[0] != player {
-			t.Errorf("did not store correct winner got %q want %q", store.winCalls[0], player)
-		}
+		AssertPlayerWin(t, store, player)
 	})
 }
 
@@ -105,7 +72,7 @@ func TestLeague(t *testing.T) {
 		store.league = wantedLeague
 		server := NewPlayerServer(store)
 
-		request := NewLeagueRequest()
+		request := newLeagueRequest()
 		response := httptest.NewRecorder()
 
 		server.ServeHTTP(response, request)
@@ -114,14 +81,18 @@ func TestLeague(t *testing.T) {
 
 		assertStatus(t, response.Code, http.StatusOK)
 		assertLeague(t, got, wantedLeague)
-
-		if response.Result().Header.Get("content-type") != "application/json" {
-			t.Errorf("response did not have content-type of application/json, got %v", response.Result().Header)
-		}
+		assertContentType(t, response, JsonContentType)
 	})
 }
 
-func NewLeagueRequest() *http.Request {
+func assertContentType(t testing.TB, response *httptest.ResponseRecorder, want string) {
+	t.Helper()
+	if response.Result().Header.Get("content-type") != want {
+		t.Errorf("response did not have content-type of %s, got %v", want, response.Result().Header)
+	}
+}
+
+func newLeagueRequest() *http.Request {
 	request, _ := http.NewRequest(http.MethodGet, "/league", nil)
 	return request
 }
